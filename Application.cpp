@@ -71,13 +71,6 @@ bool Application::initSDL()
 		return false;
 	}
 
-	m_screenBuf = SDL_CreateTexture(m_renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, c_windowWidth, c_windowHeight);
-	if (m_screenBuf == nullptr)
-	{
-		std::cout << "SDL_CreateTexture Error: " << SDL_GetError() << std::endl;
-		return false;
-	}
-
 	return true;
 }
 
@@ -94,12 +87,6 @@ void Application::shutdownSDL()
 	{
 		SDL_DestroyWindow(m_window);
 		m_window = nullptr;
-	}
-
-	if (m_screenBuf)
-	{
-		SDL_DestroyTexture(m_screenBuf);
-		m_screenBuf = nullptr;
 	}
 
 	SDL_Quit();
@@ -120,17 +107,17 @@ void Application::processEvent(const SDL_Event &ev)
 		if (ev.key.keysym.sym == SDLK_ESCAPE)
 			m_quit = true;
 		else if (ev.key.keysym.sym == SDLK_a)
-			shiftMod ? m_camera.rotateY(-0.1f) : m_camera.translateX(-1.0f);
+			shiftMod ? m_camera.rotateY(0.1f) : m_camera.translateX(-1.0f);
 		else if (ev.key.keysym.sym == SDLK_d)
-			shiftMod ? m_camera.rotateY(0.1f) : m_camera.translateX(1.0f);
+			shiftMod ? m_camera.rotateY(-0.1f) : m_camera.translateX(1.0f);
 		else if (ev.key.keysym.sym == SDLK_s)
-			shiftMod ? m_camera.rotateX(0.1f) : m_camera.translateY(-1.0f);
+			shiftMod ? m_camera.rotateZ(-0.1f) : m_camera.translateY(-1.0f);
 		else if (ev.key.keysym.sym == SDLK_w)
-			shiftMod ? m_camera.rotateX(-0.1f) : m_camera.translateY(1.0f);
+			shiftMod ? m_camera.rotateZ(0.1f) : m_camera.translateY(1.0f);
 		else if (ev.key.keysym.sym == SDLK_q)
-			shiftMod ? m_camera.rotateZ(-0.1f) : m_camera.translateZ(-1.0f);
+			shiftMod ? m_camera.rotateX(-0.1f) : m_camera.translateZ(-1.0f);
 		else if (ev.key.keysym.sym == SDLK_e)
-			shiftMod ? m_camera.rotateZ(0.1f) : m_camera.translateZ(1.0f);
+			shiftMod ? m_camera.rotateX(0.1f) : m_camera.translateZ(1.0f);
 		else if (ev.key.keysym.sym == SDLK_UP)
 			m_camera.zoom(0.1f);
 		else if (ev.key.keysym.sym == SDLK_DOWN)
@@ -145,16 +132,16 @@ void Application::processEvent(const SDL_Event &ev)
 // Add the camera and renderable objects to the scene
 void Application::setupScene()
 {
-	m_camera.init(Point3D(0.0f, 0.0f, 20.0f));
+	m_camera.init(Point3D(0.0f, 0.0f, 7.5f));
 
-	m_objects.push_back(new Plane(Point3D(), Vector3D(0.0f, 0.0f, 1.0f), Vector3D(0.0f, 1.0f, 0.0f), 10.0f, 10.0f));
-	m_objects[0]->m_colour = Colour(255, 128, 128);
+	m_objects.push_back(new Plane(Point3D(), Vector3D(0.0f, 0.0f, 1.0f), Vector3D(0.0f, 1.0f, 0.0f), 10.0f, 7.5f));
+	m_objects[0]->m_colour = Colour(245, 121, 58);
 
 	m_objects.push_back(new Sphere(Point3D(0.0f, 0.0f, 3.0f)));
-	m_objects[1]->m_colour = Colour(128, 255, 128);
+	m_objects[1]->m_colour = Colour(169, 90, 161);
 
 	m_objects.push_back(new Sphere(Point3D(1.0f, 1.0f, 1.0f), 0.75f));
-	m_objects[2]->m_colour = Colour(128, 128, 255);
+	m_objects[2]->m_colour = Colour(133, 192, 249);
 }
 
 // Render the scene (via the camera)
@@ -162,39 +149,32 @@ void Application::render()
 {
 	// Convert the image created by the camera to an SDL_Texture
 	// that can be rendered directly to the window.
-	const Image& cameraBuf = m_camera.updateScreenBuffer(m_objects);
-	if (cameraBuf.isInitialised() && m_screenBuf != nullptr)
+	if (m_camera.updatePixelBuffer(m_objects))
 	{
-		// Point the renderer to the 'screen buffer' texture.
-		SDL_SetRenderTarget(m_renderer, m_screenBuf);
-
 		// Copy the data from the camera image to the screen texture,
 		// accounting for the resolution and flipped y-axis
-		static const float x_step = (float)c_windowWidth / (float)cameraBuf.width();
-		static const float y_step = (float)c_windowHeight / (float)cameraBuf.height();
+		static const unsigned viewPlaneWidth = m_camera.getViewPlaneResolutionX(),
+							viewPlaneHeight = m_camera.getViewPlaneResolutionY();
+		static const float x_step = static_cast<float>(c_windowWidth) / static_cast<float>(viewPlaneWidth);
+		static const float y_step = static_cast<float>(c_windowHeight) / static_cast<float>(viewPlaneHeight);
 		static SDL_FRect rect;
 		rect.x = 0.0f;
 		rect.w = x_step;
 		rect.h = y_step;
 
-		static const int iEnd = cameraBuf.width(), jStart = cameraBuf.height() - 1;
+		static const int iEnd = viewPlaneWidth, jStart = viewPlaneHeight - 1;
 		for (int i = 0; i < iEnd; ++i)
 		{
 			rect.y = 0.0f;
 			for (int j = jStart; j >= 0; --j)
 			{
-				const Colour& col = cameraBuf.getPixel(i, j);
+				const Colour col = m_camera.getColourAtPixel(i, j);
 				SDL_SetRenderDrawColor(m_renderer, col.r, col.g, col.b, col.a);
 				SDL_RenderFillRectF(m_renderer, &rect);
 				rect.y += y_step;
 			}
 			rect.x += x_step;
 		}
-
-		// Draw the copied texture in the window.
-		SDL_SetRenderTarget(m_renderer, NULL);
-		SDL_RenderCopy(m_renderer, m_screenBuf, NULL, NULL);
-		SDL_RenderPresent(m_renderer);
 	}
 }
 

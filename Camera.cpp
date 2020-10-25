@@ -6,111 +6,160 @@
 void Camera::init(const Point3D& pos)
 {
 	m_position = pos;
-	m_screenBuf.init(m_viewPlane.resolutionX, m_viewPlane.resolutionY);
+	m_pixelBuf.init(m_viewPlane.resolutionX, m_viewPlane.resolutionY);
+
+//--------------------------------------------------------------------------------------------------------------------//
+	// TODO: initialise these values to store the size (in screen units)
+	// of each pixel based on the view plane resolution.
+	m_pixelWidth = -1.0f;
+	m_pixelHeight = -1.0f;
+//--------------------------------------------------------------------------------------------------------------------//
 }
 
 // Cast rays through the view plane and set colours based on what they intersect with
-const Image& Camera::updateScreenBuffer(const std::vector<Object*>& objects)
+bool Camera::updatePixelBuffer(const std::vector<Object*>& objects)
 {
-	if (m_screenBuf.isInitialised())
+	if (m_pixelBuf.isInitialised())
 	{
-		m_screenBuf.clear();
+		m_pixelBuf.clear();
 
 		// Make sure our cached values are up to date
-		if (m_zoomChanged)
-		{
-			generateRays();
-			m_zoomChanged = false;
-		}
 		if (m_worldTransformChanged)
 		{
 			updateWorldTransform();
 			m_worldTransformChanged = false;
 		}
 
-		if (!m_pixelRays.empty())
-		{
-			// Transform the objects to the camera's coordinate system
-			for (auto obj : objects)
-				obj->applyTransformation(m_worldToCameraTransform);
+		// Transform the objects to the camera's coordinate system
+		const Matrix3D worldToCameraTransform = m_cameraToWorldTransform.inverseTransform();
+		for (auto obj : objects)
+			obj->applyTransformation(worldToCameraTransform);
 
-			// Set the colour based on the closest object to each pixel
-			Point3D origin;
-			for (unsigned i = 0; i < m_viewPlane.resolutionX; ++i)
+		// Fill the pixel buffer with pointers to the closest object for each pixel
+		Point3D origin;
+		Vector3D rayDir;
+		float distToIntersection;
+		for (const auto obj : objects)
+		{
+			// Find the pixel that's intersected by the line from the
+			// camera to the object's centre
+			Vector3D toCentre = obj->position().asVector();
+			toCentre.normalise();
+				
+			// Centre line intersects the view plane when the z value
+			// is the distance to the view plane
+			const float t = m_viewPlane.distance / toCentre.z;
+			const float viewPlaneX = toCentre.x * t + m_viewPlane.halfWidth,
+					viewPlaneY = toCentre.y * t + m_viewPlane.halfHeight;
+				
+			// Find the pixel indices of the centre line intersection point
+			const int pixelX = static_cast<int>(viewPlaneX / m_pixelWidth),
+					pixelY = static_cast<int>(viewPlaneY / m_pixelHeight);
+
+			// Find the largest range of pixels that the object might cover,
+			// based on its maximum 'radius'.
+			const float objectRad = fabsf(obj->getMaxRadius());
+			const int pixelRadiusX = static_cast<int>(objectRad / m_pixelWidth) + 1,
+					pixelRadiusY = static_cast<int>(objectRad / m_pixelHeight) + 1;
+				
+			// Find the range of pixels that might be covered by the object,
+			// clamped to the view plane resolution
+			const unsigned startX = max(pixelX - pixelRadiusX, 0), endX = min(pixelX + pixelRadiusX, m_viewPlane.resolutionX),
+					startY = max(pixelY - pixelRadiusY, 0), endY = min(pixelY + pixelRadiusY, m_viewPlane.resolutionY);
+			
+			// For each of the pixels that might be covered by the object, find the direction
+			// of the ray passing through it and test whether it intersects with the object
+			for (unsigned i = startX; i < endX; ++i)
 			{
-				for (unsigned j = 0; j < m_viewPlane.resolutionY; ++j)
+				for (unsigned j = startY; j < endY; ++j)
 				{
-					const Object* object = getClosestIntersectedObject(origin, m_pixelRays[i][j], objects);
-					if (object != nullptr)
-						setPixelColourFromObject(i, j, object);
+//--------------------------------------------------------------------------------------------------------------------//
+					// TODO: if you want to pass through any extra information from the intersection test
+					// for Task 4, this is the place to do so. 
+					rayDir = getRayDirectionThroughPixel(i, j);
+
+					// Perform the intersection test between the ray through this pixel and the object,
+					// and check whether the intersection point is closer than that of previously tested objects
+					if (obj->getIntersection(origin, rayDir, distToIntersection)	
+						&& distToIntersection < m_pixelBuf.getObjectInfoForPixel(i, j).distanceToIntersection)
+					{
+						m_pixelBuf.setObjectInfoForPixel(i, j, ObjectInfo(obj, distToIntersection));
+					}
+//--------------------------------------------------------------------------------------------------------------------//
 				}
 			}
-
-			// Now put the objects back!
-			const Matrix3D cameraToWorldTransform = m_worldToCameraTransform.inverseTransform();
-			for (auto obj : objects)
-				obj->applyTransformation(cameraToWorldTransform);
 		}
+
+		// Now put the objects back!
+		for (auto obj : objects)
+			obj->applyTransformation(m_cameraToWorldTransform);
+
+		return true;
 	}
 	
-	return m_screenBuf;
+	return false;
 }
 
 //--------------------------------------------------------------------------------------------------------------------//
 
-// Generates and stores rays from the camera through the centre of each pixel, in camera space
-void Camera::generateRays()
+// Calculates the normalised direction in camera space of a ray from
+// the camera through the view-plane pixel at index (i, j),
+// where 0 <= i < m_viewPlane.resolutionX and 0 <= j < m_viewPlane.resolutionY.
+Vector3D Camera::getRayDirectionThroughPixel(int i, int j)
 {
-	m_pixelRays.clear();
-	// TODO: store the ray direction (in camera space through each pixel of the subdivided view plane,
-	// and store it at an appropriate index of m_pixelRays
+	Vector3D rayDir;
 
+	// TODO: set rayDir to be the normalised ray direction through the pixel
+	// with grid coordinates (i, j). You can use any of the member variables
+	// in Camera.h, in particular the settings in m_viewPlane.
+
+	return rayDir;
 }
 
-// Computes the transformation that will take objects from world to camera coordinates
-// and stores it in m_worldToCameraTransform
+// Computes the transformation of the camera in world space, which is also the
+// transform that will take objects from camera to world coordinates
+// and stores it in m_cameraToWorldTransform
 void Camera::updateWorldTransform()
 {
 	// TODO: the following code creates a transform for a camera with translation only
-	// (with the view direction along the negative z-axis); update it to handle rotations, too.
-	m_worldToCameraTransform(0, 3) = -m_position.x;
-	m_worldToCameraTransform(1, 3) = -m_position.y;
-	m_worldToCameraTransform(2, 3) = m_position.z;
-	m_worldToCameraTransform(2, 2) = -1.0f;
+	// plus a flip on the z-axis to change from right- to left-handed coordinates;
+	// update it to handle a generic transformation including rotations.
+	// The Euler angle values for rotations about each axis are stored in m_rotation and should be
+	// included in the Matrix3D m_cameraToWorldTransform; you can access an element of the matrix
+	// at row i and column j using the () operator for both get and set operations, e.g.
+	// matrix(i, j) = value or value = matrix(i, j) will both work.
+	m_cameraToWorldTransform(0, 3) = m_position.x;
+	m_cameraToWorldTransform(1, 3) = m_position.y;
+	m_cameraToWorldTransform(2, 3) = m_position.z;
+	m_cameraToWorldTransform(2, 2) = -1.0f;	// scale of -1 on the z-axis
 }
 
-// Sets the colour of a given pixel on the screen buffer based on the closest object
+// Gets the colour of a given pixel based on the closest object as stored in the pixel buffer
 // Params:
 //	i, j	Pixel x, y coordinates
-//	object	The first object that the ray from the camera through this pixel intersects
-void Camera::setPixelColourFromObject(unsigned i, unsigned j, const Object * object)
+Colour Camera::getColourAtPixel(unsigned i, unsigned j)
 {
+	Colour colour;
 	// TODO: update this to make the colouring more interesting!
-	// You may want to pass in extra parameters (e.g. the intersection point)...
-	m_screenBuf.setPixel(i, j, object->m_colour);
-}
 
-//--------------------------------------------------------------------------------------------------------------------//
+	// You can use the object information stored in m_pixelBuf
+	// for the object and its intersection; if you want to add more information
+	// from the intersection test, you'll need to:
+	// 1. calculate and pass the values back from Object::getIntersection() (and the derived class overrides)
+	// 2. update the ObjectInfo struct in PixelBuffer.h to store the appropriate value types
+	// 3. update the marked section in updatePixelBuffer() to store the values in m_pixelBuf
 
-// Returns a pointer to the closest object to the ray source that is intersected by the ray from the given list.
-// Params:
-//	raySrc	starting point of the ray (input)
-//	rayDir	direction of the ray (input)
-//	objects	list of pointers to objects to test (input)
-const Object* Camera::getClosestIntersectedObject(const Point3D& raySrc, const Vector3D& rayDir, const std::vector<Object*>& objects) const
-{
-	float distToNearestObject = FLT_MAX;
-	const Object* nearestObject = nullptr;
-	for (unsigned objIdx = 0; objIdx < objects.size(); ++objIdx)
-	{
-		float distToFirstIntersection = FLT_MAX;
-		if (objects[objIdx]->getIntersection(raySrc, rayDir, distToFirstIntersection)
-			&& distToFirstIntersection < distToNearestObject)
-		{
-			nearestObject = objects[objIdx];
-			distToNearestObject = distToFirstIntersection;
-		}
-	}
+	// You can also retrieve the direction of the ray that intersects the object
+	// by calling getRayDirectionThroughPixel(i, j); remember that the ray originates
+	// from the camera, whose position is just the origin in camera space.
 
-	return nearestObject;		
+	// The ObjectInfo struct (defined in PixelBuffer.h) contains
+	// information about the closest object to the pixel 
+	const ObjectInfo& objInfo = m_pixelBuf.getObjectInfoForPixel(i, j);
+
+	const Object* object = objInfo.object;
+	if (object != nullptr)
+		colour = object->m_colour;
+
+	return colour;
 }

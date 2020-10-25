@@ -149,7 +149,7 @@
   <ItemGroup>
     <ClInclude Include="Application.h" />
     <ClInclude Include="Camera.h" />
-    <ClInclude Include="Image.h" />
+    <ClInclude Include="PixelBuffer.h" />
     <ClInclude Include="Matrix3D.h" />
     <ClInclude Include="Object.h" />
     <ClInclude Include="Point3D.h" />
@@ -161,7 +161,6 @@
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="Image.cpp" />
     <ClCompile Include="Matrix3D.cpp" />
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="stdafx.cpp" />

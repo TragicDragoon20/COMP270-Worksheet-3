@@ -9,13 +9,13 @@ public:
 	// Const accessor for individual components.
 	const float& operator()(unsigned i, unsigned j) const
 	{
-		return m_[i][j];
+		return m_elements[i][j];
 	}
 
 	// Writable accessor for individual components.
 	float& operator()(unsigned i, unsigned j)
 	{
-		return m_[i][j];
+		return m_elements[i][j];
 	}
 
 	// Apply this matrix to a vector
@@ -48,11 +48,13 @@ public:
 	Matrix3D inverseTransform() const;
 
 private:
-	float	m_[4][4] = {	{ 1.0f, 0.0f, 0.0f, 0.0f },
+	// The elements of the matrix stored in a 2D array
+	float	m_elements[4][4] = {	{ 1.0f, 0.0f, 0.0f, 0.0f },
 							{ 0.0f, 1.0f, 0.0f, 0.0f },
 							{ 0.0f, 0.0f, 1.0f, 0.0f },
 							{ 0.0f, 0.0f, 0.0f, 1.0f } };
 
+	// Internal helper function
 	void multiply(float& x, float& y, float& z, float& w) const;
 									
 };

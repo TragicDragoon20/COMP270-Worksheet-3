@@ -40,9 +40,29 @@ public:
 		return result;
 	}
 
-	// Multiply the vector by as scalar
+	// Add a vector to this one
+	Vector3D operator+(const Vector3D& other)
+	{
+		return Vector3D(x + other.x, y + other.y, z + other.z);
+	}
+
+	// subtract a vector from this one
+	Vector3D operator-(const Vector3D& other)
+	{
+		return Vector3D(x - other.x, y - other.y, z - other.z);
+	}
+
+	// Multiply the vector by a scalar (right-hand)
 	Vector3D operator*(float scalar) const
 	{
 		return Vector3D(x * scalar, y * scalar, z * scalar);
 	}
+
 };
+
+// Multiply a vector by a scalar on the left
+inline Vector3D operator*(float scalar, const Vector3D& vec)
+{
+	return vec * scalar;
+}
+

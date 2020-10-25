@@ -1,14 +1,16 @@
 #pragma once
 #include "Matrix3D.h"
-#include "Image.h"
-
-class Object;
+#include "PixelBuffer.h"
+#include "Object.h"
 
 class Camera
 {
 public:
-	void			init(const Point3D& pos);
-	const Image&	updateScreenBuffer(const std::vector<Object*>& objects);
+	void init(const Point3D& pos);
+	bool updatePixelBuffer(const std::vector<Object*>& objects);
+
+	unsigned	getViewPlaneResolutionX() const { return m_viewPlane.resolutionX; }
+	unsigned	getViewPlaneResolutionY() const { return m_viewPlane.resolutionY; }
 
 	// Change the camera's world space position
 	void	translateX(float x) { m_position.x += x; m_worldTransformChanged = true; }
@@ -21,30 +23,29 @@ public:
 	void	rotateZ(float z) { m_rotation.z += z; m_worldTransformChanged = true; }
 
 	// Change the distance from the camera to the view plane
-	void	zoom(float d) { m_viewPlane.distance += d; m_viewPlane.distance = max(1.0f, m_viewPlane.distance); m_zoomChanged = true; }
+	void	zoom(float d) { m_viewPlane.distance += d; m_viewPlane.distance = max(1.0f, m_viewPlane.distance); }
+
+	Colour	getColourAtPixel(unsigned i, unsigned j);
 
 private:
-	void			generateRays();
-	void			updateWorldTransform();
-	void			setPixelColourFromObject(unsigned i, unsigned j, const Object* object);
-	const Object*	getClosestIntersectedObject(const Point3D& raySrc, const Vector3D& rayDir, const std::vector<Object*>& objects) const;
+	Vector3D	getRayDirectionThroughPixel(int i, int j);
+	void		updateWorldTransform();
 	
-	Point3D		m_position = Point3D();				// The position (translation) of the camera in world space
-	Vector3D	m_rotation = Vector3D();			// The Euler rotation of the camera in world space
-	Matrix3D	m_worldToCameraTransform;			// The matrix representing the transformation from world to camera coordinates
-	bool		m_worldTransformChanged = true;		// Flag indicating whether the camera's world transform has been updated
-	bool		m_zoomChanged = true;				// Flat indicating whether the view plane distance has changed
+	Point3D		m_position = Point3D();			// The position (translation) of the camera in world space
+	Vector3D	m_rotation = Vector3D();		// The Euler rotation of the camera in world space
+	Matrix3D	m_cameraToWorldTransform;		// The matrix representing the camera transfrom in world space
+	bool		m_worldTransformChanged = true;	// Flag indicating whether the camera's world transform has been updated
 	
 	// Properties describing the view plane (framing of the picture)
 	struct
 	{
-		float distance = 5.0f;		// Distance of the view plane from the camera (along the normal)
-		float halfWidth = 5.0f;		// Half extent of the view plane along the x-axis
-		float halfHeight = 5.0f;	// Half extent of the view plane along the y-axis
+		float distance = 2.5f;		// Distance of the view plane from the camera (along the normal/z-axis)
+		float halfWidth = 3.0f;		// Half extent of the view plane along the x-axis
+		float halfHeight = 3.0f;	// Half extent of the view plane along the y-axis
 		unsigned resolutionX = 250, resolutionY = 250;	// The number of pixels in the x and y directions
 	}	m_viewPlane;
 
 	// Cached info for generating the image
-	std::vector<std::vector<Vector3D>>	m_pixelRays;	// Stores the directions of rays passing through each pixel of the view plane
-	Image	m_screenBuf;								// Stores the colours of each pixel
+	PixelBuffer m_pixelBuf;								// Stores information about the closest object to each pixel
+	float m_pixelWidth = -1.0f, m_pixelHeight = -1.0f;	// Stores the dimensions of each pixel in camera space units
 };

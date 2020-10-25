@@ -1,6 +1,12 @@
 #pragma once
 #include "Matrix3D.h"
-#include "Image.h"
+
+// Structure holding RGBA colour components
+struct Colour
+{
+	unsigned char r, g, b, a;
+	Colour(unsigned char r_ = 0, unsigned char g_ = 0, unsigned char b_ = 0) : r(r_), g(g_), b(b_), a(255) {}
+};
 
 // Base class for all objects in the scene.
 class Object
@@ -18,6 +24,12 @@ public:
 
 	// Transforms the object using the given matrix.
 	virtual void applyTransformation(const Matrix3D& matrix) = 0;
+
+	// Access the object's position
+	const Point3D& position() const { return m_centre; }
+
+	// Get the maximum distance of any of the object's vertices from its centre
+	virtual float getMaxRadius() const = 0;
 	
 	// The object's RGBA colour
 	Colour	m_colour = Colour(126, 126, 126);
@@ -39,27 +51,31 @@ public:
 
 	virtual bool getIntersection(const Point3D& raySrc, const Vector3D& rayDir, float& distToFirstIntersection) const;
 	virtual void applyTransformation(const Matrix3D& matrix);
+	virtual float getMaxRadius() const { return m_halfDiagonal; }
 
 private:
 	// The plane's orientation is defined by its normal and the directions of its width and height in world space.
 	Vector3D	m_normal = Vector3D(0.0f, 1.0f, 0.0f),
-				m_wDir = Vector3D(1.0f, 0.0f, 0.0f),
-				m_hDir = Vector3D(0.0f, 0.0f, 1.0f);
+				m_widthDirection = Vector3D(1.0f, 0.0f, 0.0f),
+				m_heightDirection = Vector3D(0.0f, 0.0f, 1.0f);
 
 	// The plane's size is given by its dimensions along the width and height axes (if these are zero or less, the plane is infinite).
-	float		m_halfWidth, m_halfHeight;
+	float		m_halfWidth, m_halfHeight, m_halfDiagonal = 0.0f;
+	bool		m_isBounded = false;	// True if the plane's width and height are not zero
 };
 
 // A sphere is defined by its centre and radius
 class Sphere : public Object
 {
 public:
-	Sphere(Point3D centrePoint = Point3D(), float r = 1.0f) : Object(centrePoint), m_radius2(r * r) {}
+	Sphere(Point3D centrePoint = Point3D(), float r = 1.0f) : Object(centrePoint), m_radius(r), m_radius2(r * r) {}
 	virtual ~Sphere() {}
 
 	virtual bool getIntersection(const Point3D& raySrc, const Vector3D& rayDir, float& distToFirstIntersection) const;
 	virtual void applyTransformation(const Matrix3D& matrix);
+	virtual float getMaxRadius() const { return m_radius; }
 
 private:
+	float	m_radius;	// The radius of the sphere
 	float	m_radius2;	// The squared radius of the sphere
 };
