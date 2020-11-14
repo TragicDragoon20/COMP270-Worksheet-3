@@ -42,7 +42,7 @@ private:
 		float distance = 2.5f;		// Distance of the view plane from the camera (along the normal/z-axis)
 		float halfWidth = 3.0f;		// Half extent of the view plane along the x-axis
 		float halfHeight = 3.0f;	// Half extent of the view plane along the y-axis
-		unsigned resolutionX = 250, resolutionY = 250;	// The number of pixels in the x and y directions
+		unsigned resolutionX = 500, resolutionY = 500;	// The number of pixels in the x and y directions
 	}	m_viewPlane;
 
 	// Cached info for generating the image
