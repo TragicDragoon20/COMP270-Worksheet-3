@@ -134,7 +134,7 @@ void Application::setupScene()
 {
 	m_camera.init(Point3D(0.0f, 0.0f, 7.5f));
 
-	m_objects.push_back(new Plane(Point3D(), Vector3D(0.0f, 0.0f, 1.0f), Vector3D(0.0f, 1.0f, 0.0f), 10.0f, 7.5f));
+	m_objects.push_back(new Plane(Point3D(), Vector3D(0.5, 0.5, 1.0f), Vector3D(-0.5, 1.0f, -0.25), 10.0f, 7.5f));
 	m_objects[0]->m_colour = Colour(245, 121, 58);
 
 	m_objects.push_back(new Sphere(Point3D(0.0f, 0.0f, 3.0f)));

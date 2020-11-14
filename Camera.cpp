@@ -11,8 +11,8 @@ void Camera::init(const Point3D& pos)
 //--------------------------------------------------------------------------------------------------------------------//
 	// TODO: initialise these values to store the size (in screen units)
 	// of each pixel based on the view plane resolution.
-	m_pixelWidth = (-m_viewPlane.halfWidth * 2) / (m_viewPlane.resolutionX);
-	m_pixelHeight = (-m_viewPlane.halfHeight * 2) / (m_viewPlane.resolutionY);
+	m_pixelWidth = m_viewPlane.halfWidth * 2 / m_viewPlane.resolutionX;
+	m_pixelHeight = m_viewPlane.halfHeight * 2 / m_viewPlane.resolutionY;
 //--------------------------------------------------------------------------------------------------------------------//
 }
 
@@ -112,9 +112,10 @@ Vector3D Camera::getRayDirectionThroughPixel(int i, int j)
 	// TODO: set rayDir to be the normalised ray direction through the pixel
 	// with grid coordinates (i, j). You can use any of the member variables
 	// in Camera.h, in particular the settings in m_viewPlane.
+
 	
-	float CameraSpaceX = (2 * (i + 0.5) / m_viewPlane.resolutionX - 1);
-	float CameraSpaceY = -(1 - 2 * (j + 0.5) / m_viewPlane.resolutionY);
+	float CameraSpaceX = (static_cast<float>(i) / m_viewPlane.resolutionX) * (m_viewPlane.halfWidth * 2) - m_viewPlane.halfWidth;
+	float CameraSpaceY = (static_cast<float>(j) / m_viewPlane.resolutionY) * (m_viewPlane.halfHeight * 2) - m_viewPlane.halfHeight;
 	float CameraSpaceZ = m_viewPlane.distance;
 
 	rayDir = Vector3D(CameraSpaceX, CameraSpaceY, CameraSpaceZ);

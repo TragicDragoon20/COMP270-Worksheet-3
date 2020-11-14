@@ -28,15 +28,31 @@ Plane::Plane(Point3D centrePoint, Vector3D n, Vector3D up, float w, float h) :
 
 // Returns true if the ray intersects with this plane.
 // Params:
-//	raySrc					source/starting point of the ray (input)
-//	rayDir					direction of the ray (input)
-//	distToFirstIntersection	distance along the ray from the starting point of the first intersection with the plane (output)
+//	raySrc					source/starting point of the ray (input) p1
+//	rayDir					direction of the ray (input) v
+//	distToFirstIntersection	distance along the ray from the starting point of the first intersection with the plane (output) t
 bool Plane::getIntersection(const Point3D& raySrc, const Vector3D& rayDir, float& distToFirstIntersection) const
 {
+
+	
 	// TODO: implement the ray-plane intersection test, returning true if the ray passes through the plane at a
 	// point within the width/height bounds (if applicable) as defined by the values of m_halfWidth and m_halfHeight
 	// in the directions m_widthDirection and m_heightDirection respectively. Make sure you set distToFirstIntersection
 	// to be the distance along the ray from its starting point/source to the point of intersection.
+	
+	distToFirstIntersection = (m_centre - raySrc).dot(m_normal) / rayDir.dot(m_normal);
+
+	Point3D intersectionPoint = raySrc + rayDir * distToFirstIntersection;
+
+	Vector3D intersectvector = intersectionPoint - m_centre;
+	float horizontalDot = intersectvector.dot(m_widthDirection);
+	float verticalDot = intersectvector.dot(m_heightDirection);
+
+	
+	if (horizontalDot < m_halfWidth && horizontalDot > -m_halfWidth && verticalDot < m_halfHeight && verticalDot > -m_halfHeight)
+	{
+		return true;
+	}
 	
 	return false;
 }
@@ -60,7 +76,7 @@ void Plane::applyTransformation(const Matrix3D & matrix)
 bool Sphere::getIntersection(const Point3D& raySrc, const Vector3D& rayDir, float& distToFirstIntersection) const
 {
 	// Find the point on the ray closest to the sphere's centre
-	Vector3D srcToCentre = m_centre - raySrc;
+	Vector3D srcToCentre = m_centre - raySrc; // p2 - p1
 	float tc = srcToCentre.dot(rayDir);
 	
 	// Check whether the closest point is inside the sphere
