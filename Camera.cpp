@@ -107,25 +107,23 @@ bool Camera::updatePixelBuffer(const std::vector<Object*>& objects)
 // where 0 <= i < m_viewPlane.resolutionX and 0 <= j < m_viewPlane.resolutionY.
 Vector3D Camera::getRayDirectionThroughPixel(int i, int j)
 {
-	Vector3D rayDir;
-
 	// TODO: set rayDir to be the normalised ray direction through the pixel
 	// with grid coordinates (i, j). You can use any of the member variables
 	// in Camera.h, in particular the settings in m_viewPlane.
 
-	
-	float CameraSpaceX = (static_cast<float>(i) / m_viewPlane.resolutionX) * (m_viewPlane.halfWidth * 2) - m_viewPlane.halfWidth;
-	float CameraSpaceY = (static_cast<float>(j) / m_viewPlane.resolutionY) * (m_viewPlane.halfHeight * 2) - m_viewPlane.halfHeight;
-	float CameraSpaceZ = m_viewPlane.distance;
+	const float cameraSpaceX = (static_cast<float>(i) / m_viewPlane.resolutionX) * (m_viewPlane.halfWidth * 2) -
+		m_viewPlane.halfWidth;
+	const float cameraSpaceY = (static_cast<float>(j) / m_viewPlane.resolutionY) * (m_viewPlane.halfHeight * 2) -
+		m_viewPlane.halfHeight;
 
-	rayDir = Vector3D(CameraSpaceX, CameraSpaceY, CameraSpaceZ);
+	Vector3D rayDir = Vector3D(cameraSpaceX, cameraSpaceY, m_viewPlane.distance);
 
 	rayDir.normalise();
 	return rayDir;
 }
 
 // Computes the transformation of the camera in world space, which is also the
-// transform that will take objects from camera to world coordinates
+// transform that will take objects from camera to world coordinateschrome://vivaldi-webui/startpage?section=Speed-dials&activeSpeedDialIndex=0&background-color=#2e2e2e
 // and stores it in m_cameraToWorldTransform
 void Camera::updateWorldTransform()
 {
@@ -136,10 +134,11 @@ void Camera::updateWorldTransform()
 	// included in the Matrix3D m_cameraToWorldTransform; you can access an element of the matrix
 	// at row i and column j using the () operator for both get and set operations, e.g.
 	// matrix(i, j) = value or value = matrix(i, j) will both work.
-	m_cameraToWorldTransform(0, 3) = m_position.x;
+	m_cameraToWorldTransform(0, 2) = m_position.x;
 	m_cameraToWorldTransform(1, 3) = m_position.y;
 	m_cameraToWorldTransform(2, 3) = m_position.z;
 	m_cameraToWorldTransform(2, 2) = -1.0f;	// scale of -1 on the z-axis
+
 }
 
 // Gets the colour of a given pixel based on the closest object as stored in the pixel buffer
