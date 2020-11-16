@@ -11,6 +11,9 @@ void Camera::init(const Point3D& pos)
 //--------------------------------------------------------------------------------------------------------------------//
 	// TODO: initialise these values to store the size (in screen units)
 	// of each pixel based on the view plane resolution.
+
+	// To calculate the pixel width and height we take the total width and height of the view plane
+	// and divide it by the resolution
 	m_pixelWidth = m_viewPlane.halfWidth * 2 / m_viewPlane.resolutionX;
 	m_pixelHeight = m_viewPlane.halfHeight * 2 / m_viewPlane.resolutionY;
 //--------------------------------------------------------------------------------------------------------------------//
@@ -111,10 +114,13 @@ Vector3D Camera::getRayDirectionThroughPixel(int i, int j)
 	// with grid coordinates (i, j). You can use any of the member variables
 	// in Camera.h, in particular the settings in m_viewPlane.
 
-	const float cameraSpaceX = (static_cast<float>(i) / m_viewPlane.resolutionX) * (m_viewPlane.halfWidth * 2) -
-		m_viewPlane.halfWidth;
-	const float cameraSpaceY = (static_cast<float>(j) / m_viewPlane.resolutionY) * (m_viewPlane.halfHeight * 2) -
-		m_viewPlane.halfHeight;
+
+	// To get the world space coordinates we multiply the width and height by the iteration value
+	// Since the plane is centered at (0, 0) and has a half width and height of 3 the plane therefore spans from (-3, -3) to (3, 3)
+	// To make sure the rays pass through our view plane we need to take half the width and height
+	// Whilst the z part is just the view plane distance
+	const float cameraSpaceX = (static_cast<float>(i) * m_pixelWidth) - m_viewPlane.halfWidth;
+	const float cameraSpaceY = (static_cast<float>(j) * m_pixelHeight) - m_viewPlane.halfHeight;
 
 	Vector3D rayDir = Vector3D(cameraSpaceX, cameraSpaceY, m_viewPlane.distance);
 
@@ -123,7 +129,7 @@ Vector3D Camera::getRayDirectionThroughPixel(int i, int j)
 }
 
 // Computes the transformation of the camera in world space, which is also the
-// transform that will take objects from camera to world coordinateschrome://vivaldi-webui/startpage?section=Speed-dials&activeSpeedDialIndex=0&background-color=#2e2e2e
+// transform that will take objects from camera to world coordinates chrome://vivaldi-webui/startpage?section=Speed-dials&activeSpeedDialIndex=0&background-color=#2e2e2e
 // and stores it in m_cameraToWorldTransform
 void Camera::updateWorldTransform()
 {
@@ -134,7 +140,7 @@ void Camera::updateWorldTransform()
 	// included in the Matrix3D m_cameraToWorldTransform; you can access an element of the matrix
 	// at row i and column j using the () operator for both get and set operations, e.g.
 	// matrix(i, j) = value or value = matrix(i, j) will both work.
-	m_cameraToWorldTransform(0, 2) = m_position.x;
+	m_cameraToWorldTransform(0, 3) = m_position.x;
 	m_cameraToWorldTransform(1, 3) = m_position.y;
 	m_cameraToWorldTransform(2, 3) = m_position.z;
 	m_cameraToWorldTransform(2, 2) = -1.0f;	// scale of -1 on the z-axis

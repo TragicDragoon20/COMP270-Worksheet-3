@@ -39,12 +39,17 @@ bool Plane::getIntersection(const Point3D& raySrc, const Vector3D& rayDir, float
 	// point within the width/height bounds (if applicable) as defined by the values of m_halfWidth and m_halfHeight
 	// in the directions m_widthDirection and m_heightDirection respectively. Make sure you set distToFirstIntersection
 	// to be the distance along the ray from its starting point/source to the point of intersection.
-	
+
+	// using the equation t = (p2 - p1)dot(n) / vdot(n)
+	// where p2 = m_centre, p1 = raySrc, n = m_normal and v = rayDir
 	distToFirstIntersection = (m_centre - raySrc).dot(m_normal) / rayDir.dot(m_normal);
 
+	// using the equation p = p1 + vt
+	// where p is the intersection point, p1 = raySrc, v = rayDir and t = distToFirstIntersection
 	Point3D intersectionPoint = raySrc + rayDir * distToFirstIntersection;
 
 	Vector3D intersectvector = intersectionPoint - m_centre;
+	// horizontalDot and verticalDot are used to check if the intersection point is withing the plane
 	float horizontalDot = intersectvector.dot(m_widthDirection);
 	float verticalDot = intersectvector.dot(m_heightDirection);
 
