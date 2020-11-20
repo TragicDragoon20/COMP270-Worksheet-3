@@ -129,7 +129,7 @@ Vector3D Camera::getRayDirectionThroughPixel(int i, int j)
 }
 
 // Computes the transformation of the camera in world space, which is also the
-// transform that will take objects from camera to world coordinates chrome://vivaldi-webui/startpage?section=Speed-dials&activeSpeedDialIndex=0&background-color=#2e2e2e
+// transform that will take objects from camera to world coordinates
 // and stores it in m_cameraToWorldTransform
 void Camera::updateWorldTransform()
 {
